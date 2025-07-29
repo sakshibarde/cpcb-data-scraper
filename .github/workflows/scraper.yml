@@ -1,109 +1,34 @@
-name: Scrape and Upload to Drive
+name: Scrape CPCB Data
+
 on:
-  workflow_dispatch: # Allows manual runs
+  workflow_dispatch:
   schedule:
     # Runs at the beginning of every hour
     - cron: '0 * * * *'
 
 jobs:
-  build-and-upload:
+  build-and-commit:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        
-      - name: Set up Python
+      - uses: actions/checkout@v3
+
+      - name: Set up Python 3.9
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-          
-      - name: Install Python dependencies
-        run: pip install pandas requests
-        
-      - name: Run Python scraper
-        run: python cpcb_scraper.py
-        
-      - name: Setup Node.js for Drive upload
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          
-      - name: Install Google APIs
-        run: npm install googleapis
-        
-      - name: Upload newly generated CSV files to Google Drive
-        env:
-          GOOGLE_CREDENTIALS: ${{ secrets.GDRIVE_CREDENTIALS }}
-          FOLDER_ID: 1qSb7_elWCqp8dPfO5rj3NJk5HVYxTXBY
+
+      - name: Install dependencies
         run: |
-          node << 'EOF'
-          const { google } = require('googleapis');
-          const fs = require('fs');
-          const path = require('path');
+          python -m pip install --upgrade pip
+          pip install pandas requests
 
-          async function uploadFiles() {
-            try {
-              // Parse credentials
-              const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
-              
-              // Setup authentication
-              const auth = new google.auth.GoogleAuth({
-                credentials,
-                scopes: ['https://www.googleapis.com/auth/drive.file']
-              });
+      - name: Run the scraper
+        run: python cpcb_scraper.py
 
-              const drive = google.drive({ version: 'v3', auth });
-              
-              // Find all CSV files in current directory
-              const files = fs.readdirSync('.').filter(f => f.endsWith('.csv'));
-              
-              if (files.length === 0) {
-                console.log('No CSV files found to upload');
-                return;
-              }
-              
-              console.log(`Found ${files.length} CSV file(s):`, files);
-
-              // Upload each CSV file
-              for (const file of files) {
-                console.log(`Uploading ${file}...`);
-                
-                const fileMetadata = {
-                  name: file,
-                  parents: [process.env.FOLDER_ID]
-                };
-
-                const media = {
-                  mimeType: 'text/csv',
-                  body: fs.createReadStream(file)
-                };
-
-                const response = await drive.files.create({
-                  resource: fileMetadata,
-                  media: media,
-                  fields: 'id,name'
-                });
-
-                console.log(`✅ Successfully uploaded ${file}`);
-                console.log(`   File ID: ${response.data.id}`);
-              }
-              
-              console.log(`\n🎉 All ${files.length} CSV files uploaded successfully!`);
-              
-            } catch (error) {
-              console.error('❌ Error uploading files:', error.message);
-              
-              // More detailed error logging
-              if (error.code) {
-                console.error('Error code:', error.code);
-              }
-              if (error.errors) {
-                console.error('Detailed errors:', error.errors);
-              }
-              
-              process.exit(1);
-            }
-          }
-
-          uploadFiles();
-          EOF
+      - name: Commit data files
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add *.csv
+          git diff --staged --quiet || git commit -m "Update water quality data"
+          git push
