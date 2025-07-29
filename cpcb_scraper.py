@@ -2,7 +2,6 @@ import requests
 import pandas as pd
 import warnings
 from datetime import datetime
-import os
 
 # Suppress InsecureRequestWarning
 warnings.simplefilter("ignore", category=requests.packages.urllib3.exceptions.InsecureRequestWarning)
@@ -68,10 +67,7 @@ def main():
     # --- MODIFICATION START ---
     # Create a dynamic filename with the current date and time
     timestamp_str = datetime.now().strftime("%Y-%m-%d_%H-%M")
-    output_dir = r"C:\Users\hp\Desktop\Water quality data previous years"
-    filename = os.path.join(output_dir, f"water_data_{timestamp_str}.csv")
-
-    # filename = f"water_data_{timestamp_str}.csv"
+    filename = f"water_data_{timestamp_str}.csv"
     # --- MODIFICATION END ---
 
     df.to_csv(filename, index=False)
