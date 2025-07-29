@@ -1,34 +1,32 @@
-name: Scrape CPCB Data
+name: Scrape and Upload to Drive
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Allows manual runs
   schedule:
     # Runs at the beginning of every hour
     - cron: '0 * * * *'
 
 jobs:
-  build-and-commit:
+  build-and-upload:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: Set up Python 3.9
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pandas requests
+      - name: Install Python dependencies
+        run: pip install pandas requests
 
-      - name: Run the scraper
+      - name: Run Python scraper
         run: python cpcb_scraper.py
 
-      - name: Commit data files
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add *.csv
-          git diff --staged --quiet || git commit -m "Update water quality data"
-          git push
+      - name: Upload file to Google Drive
+        uses: burnett01/google-drive-upload-action@v1.3.0
+        with:
+          parent-folder-id: "1qSb7_elWCqp8dPfO5rj3NJk5HVYxTXBY"
+          file-name: "*.csv"
+          google-credentials: ${{ secrets.GDRIVE_CREDENTIALS }}
