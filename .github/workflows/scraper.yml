@@ -1,12 +1,10 @@
 name: Scrape CPCB Data
 
 on:
-  workflow_dispatch: # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
   schedule:
-    # Runs at 06:00 UTC (11:30 AM IST) every day
-    - cron: '0 6 * * *'
-    # Runs at 18:00 UTC (11:30 PM IST) every day
-    - cron: '0 18 * * *'
+    # Runs at the beginning of every hour
+    - cron: '0 * * * *'
 
 jobs:
   build-and-commit:
