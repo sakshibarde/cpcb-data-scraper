@@ -25,7 +25,7 @@ jobs:
         run: python cpcb_scraper.py
 
       - name: Upload file to Google Drive
-        uses: burnett01/google-drive-upload-action@v1.3.0
+        uses: burnett01/google-drive-upload-action@v1
         with:
           parent-folder-id: "1qSb7_elWCqp8dPfO5rj3NJk5HVYxTXBY"
           file-name: "*.csv"
